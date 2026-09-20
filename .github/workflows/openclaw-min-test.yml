@@ -14,47 +14,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 26 (OpenClaw requires Node 24.16+)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "26"
 
-      - name: Install OpenClaw
+      - name: Install
         run: npm install -g openclaw@latest --allow-scripts=openclaw
 
-      - name: Show OpenClaw version
+      - name: Version
         run: openclaw --version
 
-      - name: Run OpenClaw one-shot inference (read test file, call cloud model, output JSON, exit)
+      - name: Run
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          # Use OpenAI-compatible cloud provider config without persisting any private data
         run: |
-          # Minimal openclaw config: one openai-compatible provider (OpenRouter) with env key
           mkdir -p "$HOME/.openclaw"
-          cat > "$HOME/.openclaw/openclaw.json" <<'JSON'
-{
-  "gateway": { "mode": "local", "port": 18789, "auth": { "mode": "token", "token": "cloud-min-test" } },
-  "agents": { "defaults": { "model": { "primary": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free" } } },
-  "models": {
-    "mode": "merge",
-    "providers": {
-      "openrouter": {
-        "baseUrl": "https://openrouter.ai/api/v1",
-        "apiKey": "${OPENROUTER_API_KEY}",
-        "api": "openai-completions",
-        "timeoutSeconds": 120,
-        "models": [
-          { "id": "nvidia/nemotron-3-ultra-550b-a55b:free", "name": "nemotron free" },
-          { "id": "moonshotai/kimi-k3:free", "name": "kimi free" }
-        ]
-      }
-    }
-  }
-}
-JSON
-          # Read the min test file (public, no secrets), ask model to output structured JSON
+          printf '%s\n' \
+            '{"gateway":{"mode":"local","port":18789,"auth":{"mode":"token","token":"x"}},' \
+            '"agents":{"defaults":{"model":{"primary":"openrouter/nvidia/nemotron-3-ultra-550b-a55b:free"}}},' \
+            '"models":{"mode":"merge","providers":{"openrouter":' \
+            '{"baseUrl":"https://openrouter.ai/api/v1","apiKey":"${OPENROUTER_API_KEY}",' \
+            '"api":"openai-completions","timeoutSeconds":120,"models":[' \
+            '{"id":"nvidia/nemotron-3-ultra-550b-a55b:free","name":"n"}]}}}}' \
+            > "$HOME/.openclaw/openclaw.json"
           openclaw infer model run --local --json \
             --model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free \
-            --prompt "$(cat tests/openclaw-min-input.md)" 2>&1 | tee /tmp/openclaw_out.txt
-          echo "=== exit=$? ==="# force re-register
+            --prompt "$(cat tests/openclaw-min-input.md)"
