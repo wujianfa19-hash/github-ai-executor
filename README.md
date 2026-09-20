@@ -22,12 +22,22 @@
 
 ## 已迁移任务
 
-> 公开仓库代码已就位；工作流文件因需要 GitHub `workflow` scope 授权推送，待授权后落地。
+> 公开仓库程序骨架与代码拆分已完成；云端执行能力正在逐任务真实验证中。
 
 | 工作流 | 状态 |
 |---|---|
-| `api-provider-smoke-test.yml` | 脚本/依赖已就位，工作流待推送授权 |
+| `api-provider-smoke-test.yml` | 已推送并真实运行（单元测试通过；模型路由验证待配置模型 Secrets） |
 | `free-ai-resource-radar.yml` | 脚本/依赖已就位，待迁移 |
+| `github-ai-daily.yml` | 脚本/依赖已就位，待迁移 |
+| `net-venture-radar.yml` | 脚本/依赖已就位，待迁移 |
+
+### 第一次真实运行记录
+
+- 工作流远端提交：`a0c5bf3`
+- 运行号：`35524148675`（手动触发）
+- 单元测试全部通过（radar / GitHub AI Daily / npm test）
+- 模型路由验证失败根因：`AI_ROUTER free_only=true configured=0` → 公开仓库未配置任何模型 Secrets
+- 日志安全检查：无任何私有凭据 / 邮箱 / 私人正文泄漏
 | `github-ai-daily.yml` | 脚本/依赖已就位，待迁移 |
 | `net-venture-radar.yml` | 脚本/依赖已就位，待迁移 |
 
