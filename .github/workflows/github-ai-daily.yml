@@ -1,0 +1,45 @@
+name: GitHub AI Daily Intelligence
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "仅测试：不发正式邮件、不写正式历史、不开报告保存"
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  daily-dryrun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ inputs.dry_run }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Generate report in DRY-RUN mode (no email, no history write, output to temp)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: "1"
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: node --import "./02_程序组件/共享/free-model-router-adapter.mjs" "02_程序组件/GitHubAI云端日报/daily.mjs" --dry-run
