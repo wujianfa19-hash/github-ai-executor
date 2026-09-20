@@ -1,0 +1,213 @@
+name: API Provider Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/api-provider-smoke-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  router-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Verify legacy DeepSeek endpoint is replaced
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          node --import "./02_程序组件/共享/free-model-router-adapter.mjs" <<'NODE'
+          const r = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer legacy-placeholder' },
+            body: JSON.stringify({
+              model: 'legacy-deepseek-model',
+              messages: [{ role: 'user', content: '只输出 JSON：{"ok":true,"source":"free-router"}' }],
+              max_tokens: 256,
+              temperature: 0.1
+            })
+          });
+          const data = await r.json();
+          const text = data?.choices?.[0]?.message?.content || '';
+          const start = text.indexOf('{');
+          const end = text.lastIndexOf('}');
+          const parsed = start >= 0 && end > start ? JSON.parse(text.slice(start, end + 1)) : null;
+          if (!r.ok || !parsed || parsed.ok !== true) throw new Error(`router smoke failed: HTTP ${r.status}`);
+          const provider = r.headers.get('x-ai-router-provider') || 'unknown';
+          if (provider === 'deepseek') throw new Error('legacy DeepSeek provider must not be used');
+          console.log(`ROUTER_SMOKE_OK provider=${provider}`);
+          NODE
+
+      - name: Verify failover works without Groq
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          node --import "./02_程序组件/共享/free-model-router-adapter.mjs" <<'NODE'
+          const r = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: '只输出 JSON：{"ok":true}' }],
+              max_tokens: 256
+            })
+          });
+          const provider = r.headers.get('x-ai-router-provider') || 'unknown';
+          if (!r.ok || provider === 'unknown' || provider === 'groq' || provider === 'deepseek') {
+            throw new Error(`failover smoke failed: HTTP ${r.status}, provider=${provider}`);
+          }
+          console.log(`ROUTER_FAILOVER_OK provider=${provider}`);
+          NODE
+
+  github-ai-daily-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Run GitHub AI Daily unit tests
+        run: npm test
+
+      - name: Verify GitHub AI Daily model path uses free router
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          node --import "./02_程序组件/共享/free-model-router-adapter.mjs" --input-type=module <<'NODE'
+          import { buildRuleReport, generateDeepSeekReport } from './02_程序组件/GitHubAI云端日报/daily.mjs';
+
+          const now = new Date();
+          const repo = {
+            rank: 1,
+            fullName: 'fixture/free-router-test',
+            url: 'https://github.com/fixture/free-router-test',
+            source: 'GitHub Search: AI',
+            description: 'An AI agent automation toolkit with API integrations',
+            readmePreview: 'AI agent automation API CLI Docker quickstart example '.repeat(30),
+            stars: 128,
+            forks: 12,
+            language: 'Python',
+            pushedAt: now.toISOString(),
+            createdAt: new Date(now.getTime() - 5 * 86400000).toISOString(),
+            license: 'MIT',
+            topics: ['ai', 'agent', 'automation'],
+            latestRelease: null,
+            previousReleaseTag: null,
+            recentCommitCount: 3,
+            dataSources: { readme: 'ok', release: 'ok', commits: 'ok' },
+            ageBucket: 'primary',
+            ageReason: '最近 30 天内创建',
+            ageDays: 5,
+            category: 'AI Agent与自动化',
+            score: 82,
+            heatScore: 1000,
+            repeated: false
+          };
+          const meta = {
+            reportDate: '2026-09-07',
+            timeRange: '优先最近 30 天内创建',
+            availableSources: ['GitHub Search API'],
+            unavailableSources: []
+          };
+          const template = buildRuleReport([repo], meta);
+          const report = await generateDeepSeekReport([repo], meta, template);
+          if (!report || !report.includes(repo.fullName)) throw new Error('GitHub AI Daily router integration failed');
+          console.log('GITHUB_AI_DAILY_ROUTER_OK');
+          NODE
+
+  net-venture-radar-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Run radar unit tests
+        run: |
+          node --test "02_程序组件/网创新项目雷达/daily.test.mjs"
+          node --test "02_程序组件/网创新项目雷达/daily-v1.4.test.mjs"
+
+      - name: Verify radar model path uses free router
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          node --import "./02_程序组件/共享/free-model-router-adapter.mjs" --input-type=module <<'NODE'
+          import { analyzeWithDeepSeek } from './02_程序组件/网创新项目雷达/src/services.mjs';
+
+          const candidate = {
+            projectId: 'fixture-router-project',
+            name: '免费路由测试项目',
+            title: '免费路由测试项目',
+            url: 'https://example.com/free-router-test',
+            description: '一个用于验证自动化项目分析链路的测试候选。',
+            publishedAt: new Date().toISOString(),
+            sourceSignals: ['fixture'],
+            stars: 10,
+            points: 0,
+            comments: 0
+          };
+          const evidence = {
+            sources: [{
+              kind: 'official',
+              url: 'https://example.com/free-router-test',
+              official: true,
+              text: '这是测试证据。仅确认存在一个公开项目页面；中国大陆注册、实名认证、提现与到账均没有证据，因此必须写未确认。'
+            }],
+            errors: []
+          };
+          const analysis = await analyzeWithDeepSeek(candidate, evidence, {
+            apiKey: process.env.DEEPSEEK_KEY,
+            model: 'legacy-model-name',
+            skillExcerpt: '所有面向用户的分析、风险和行动建议必须使用简体中文；没有证据的事实必须标为未确认。'
+          });
+          if (!analysis || typeof analysis.summary !== 'string' || !analysis.facts) {
+            throw new Error('Net Venture Radar router integration failed');
+          }
+          console.log('NET_VENTURE_RADAR_ROUTER_OK');
+          NODE

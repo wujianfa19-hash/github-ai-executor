@@ -1,0 +1,39 @@
+# ===== 密钥与凭证——严禁提交 =====
+.env
+.env.*
+*.env
+client_secret.json
+client_secret*.json
+credentials/
+credentials/*.json
+*.token
+*token*.json
+*refresh_token*
+*access_token*
+accounts.json
+*.pem
+*.key
+*.p12
+
+# ===== 私人运行数据（公开仓库绝不保留） =====
+# data/ 与 reports/ 由程序运行时按 STATE_DIR / REPORT_DIR / DATA_DIR 指向私人仓库或临时目录
+02_程序组件/免费AI资源雷达/data/
+02_程序组件/免费AI资源雷达/reports/
+02_程序组件/网创新项目雷达/data/
+02_程序组件/网创新项目雷达/reports/
+04_运行数据/
+github_ai_report_history.json
+
+# ===== 依赖 =====
+node_modules/
+
+# ===== 日志与临时文件 =====
+*.log
+tmp_*
+_tmp_*
+logs/
+*.tmp
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db

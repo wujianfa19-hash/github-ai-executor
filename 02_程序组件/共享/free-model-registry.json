@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "freeOnly": true,
+    "oneModelPerProvider": true,
+    "autoReplaceProduction": false,
+    "replacementRequiresReview": true
+  },
+  "providers": [
+    {
+      "name": "groq",
+      "displayName": "Groq",
+      "env": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-120b",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "modelListEndpoint": "https://api.groq.com/openai/v1/models",
+      "type": "openai",
+      "extra": { "response_format": { "type": "json_object" }, "reasoning_effort": "low" },
+      "watchUrls": ["https://console.groq.com/docs/models"]
+    },
+    {
+      "name": "nvidia",
+      "displayName": "NVIDIA",
+      "env": "NVIDIA_API_KEY",
+      "model": "moonshotai/kimi-k3",
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "modelListEndpoint": "https://integrate.api.nvidia.com/v1/models",
+      "type": "openai",
+      "temperature": 1,
+      "extra": { "reasoning_effort": "low" },
+      "watchUrls": ["https://build.nvidia.com/models"]
+    },
+    {
+      "name": "openrouter",
+      "displayName": "OpenRouter",
+      "env": "OPENROUTER_API_KEY",
+      "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "modelListEndpoint": "https://openrouter.ai/api/v1/models",
+      "type": "openai",
+      "watchUrls": ["https://openrouter.ai/models?max_price=0"]
+    },
+    {
+      "name": "sensenova",
+      "displayName": "商汤 SenseNova",
+      "env": "SENSENOVA_API_KEY",
+      "model": "glm-5.2",
+      "endpoint": "https://token.sensenova.cn/v1/chat/completions",
+      "modelListEndpoint": "https://token.sensenova.cn/v1/models",
+      "type": "openai",
+      "watchUrls": ["https://platform.sensenova.cn/"]
+    },
+    {
+      "name": "agnes",
+      "displayName": "Agnes",
+      "env": "AGNES_API_KEY",
+      "model": "agnes-2.5-flash",
+      "endpoint": "https://apihub.agnes-ai.com/v1/chat/completions",
+      "modelListEndpoint": "https://apihub.agnes-ai.com/v1/models",
+      "type": "openai",
+      "watchUrls": ["https://platform.agnes-ai.com/"]
+    },
+    {
+      "name": "siliconflow",
+      "displayName": "硅基流动 SiliconFlow",
+      "env": "SILICONFLOW_API_KEY",
+      "model": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+      "endpoint": "https://api.siliconflow.cn/v1/chat/completions",
+      "modelListEndpoint": "https://api.siliconflow.cn/v1/models",
+      "type": "openai",
+      "timeoutMs": 30000,
+      "watchUrls": ["https://siliconflow.cn/zh-cn/models"]
+    },
+    {
+      "name": "gemini",
+      "displayName": "Google Gemini",
+      "env": "GEMINI_API_KEY",
+      "model": "gemini-3.7-flash",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent",
+      "modelListEndpoint": "https://generativelanguage.googleapis.com/v1beta/models",
+      "type": "gemini",
+      "watchUrls": ["https://ai.google.dev/gemini-api/docs/pricing"]
+    },
+    {
+      "name": "zhipu",
+      "displayName": "智谱",
+      "env": "ZHIPU_API_KEY",
+      "model": "glm-4.7-flash",
+      "endpoint": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      "modelListEndpoint": "https://open.bigmodel.cn/api/paas/v4/models",
+      "type": "openai",
+      "timeoutMs": 40000,
+      "extra": { "response_format": { "type": "json_object" } },
+      "watchUrls": ["https://open.bigmodel.cn/pricing"]
+    }
+  ]
+}

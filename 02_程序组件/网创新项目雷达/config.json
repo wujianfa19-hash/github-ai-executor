@@ -1,0 +1,59 @@
+{
+  "version": "1.4.0",
+  "timezone": "Asia/Shanghai",
+  "output_language": "zh-CN",
+  "scan": {
+    "lookback_hours": [24, 72, 168],
+    "max_raw_leads": 120,
+    "max_quick_candidates": 24,
+    "max_deep_verify": 8,
+    "min_daily_recommendations": 1,
+    "max_final_recommendations": 5,
+    "github_queries": [
+      "ai agent",
+      "automation platform",
+      "creator monetization",
+      "affiliate platform",
+      "marketplace api",
+      "micro saas"
+    ],
+    "hn_queries": [
+      "Show HN",
+      "launch",
+      "affiliate",
+      "marketplace",
+      "creator",
+      "automation"
+    ]
+  },
+  "thresholds": {
+    "min_opportunity_score_quick": 45,
+    "min_opportunity_score_final": 65,
+    "min_action_index_final": 60,
+    "min_evidence_score_strong_recommendation": 70
+  },
+  "refresh_days": {
+    "official_eligibility": 7,
+    "kyc": 7,
+    "payout": 7,
+    "tax": 30,
+    "competition": 3
+  },
+  "payout_case_decay": {
+    "0_7_days": 1.0,
+    "8_30_days": 0.8,
+    "31_90_days": 0.5,
+    "91_180_days": 0.3,
+    "over_180_days": 0.2
+  },
+  "notifications": {
+    "daily_report": true,
+    "upgrade_downgrade_alerts": true
+  },
+  "sources": {
+    "github": true,
+    "hacker_news": true,
+    "official_web": true,
+    "brave_search_optional": true
+  }
+}

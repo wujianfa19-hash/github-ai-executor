@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "output_language": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "policy": {
+    "free_api_levels": {
+      "A": "长期真免费或明确持续免费额度",
+      "B": "有条件免费，如绑卡、额度很小或地区有限制",
+      "C": "一次性试用、注册送额度或限时活动"
+    },
+    "agent_requires_free_software": true,
+    "agent_requires_free_model_path": true,
+    "auto_replace_production_model": false,
+    "replacement_requires_human_review": true
+  },
+  "scan": {
+    "lookback_days": 14,
+    "max_api_leads": 30,
+    "max_agent_leads": 30,
+    "max_report_api_candidates": 8,
+    "max_report_agents": 8,
+    "github_api_queries": [
+      "free LLM API",
+      "free inference API",
+      "OpenAI compatible free model",
+      "free tier AI API",
+      "free generative AI API"
+    ],
+    "github_agent_queries": [
+      "AI agent Ollama",
+      "AI agent local model",
+      "browser agent Ollama",
+      "coding agent local LLM",
+      "research agent local model",
+      "computer use agent local LLM"
+    ],
+    "hn_queries": [
+      "free LLM API",
+      "free AI API",
+      "open source agent local model",
+      "Ollama agent"
+    ]
+  },
+  "watch_only_providers": [
+    {
+      "name": "opencodezen",
+      "displayName": "OpenCode Zen",
+      "watchUrls": ["https://opencode.ai/"],
+      "note": "仅监控；未确认符合长期免费 API 规则前不得进入生产路由。"
+    },
+    {
+      "name": "deepseek",
+      "displayName": "DeepSeek",
+      "watchUrls": ["https://api-docs.deepseek.com/", "https://www.deepseek.com/"],
+      "note": "仅监控新的免费 API 机会；当前生产路由不依赖 DeepSeek。"
+    }
+  ],
+  "notifications": {
+    "daily_report": true,
+    "change_alerts": true
+  }
+}

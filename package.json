@@ -1,0 +1,14 @@
+{
+  "name": "github-ai-executor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "daily": "node --import \"./02_程序组件/共享/free-model-router-adapter.mjs\" \"02_程序组件/GitHubAI云端日报/daily.mjs\"",
+    "check": "node --import \"./02_程序组件/共享/free-model-router-adapter.mjs\" \"02_程序组件/GitHubAI云端日报/daily.mjs\" --dry-run",
+    "test": "node --test \"02_程序组件/GitHubAI云端日报/daily.test.mjs\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
