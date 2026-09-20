@@ -22,12 +22,14 @@
 
 ## 已迁移任务
 
+> 公开仓库代码已就位；工作流文件因需要 GitHub `workflow` scope 授权推送，待授权后落地。
+
 | 工作流 | 状态 |
 |---|---|
-| `api-provider-smoke-test.yml` | 已迁移（手动测试通过后标记） |
-| `free-ai-resource-radar.yml` | 待迁移 |
-| `github-ai-daily.yml` | 待迁移 |
-| `net-venture-radar.yml` | 待迁移 |
+| `api-provider-smoke-test.yml` | 脚本/依赖已就位，工作流待推送授权 |
+| `free-ai-resource-radar.yml` | 脚本/依赖已就位，待迁移 |
+| `github-ai-daily.yml` | 脚本/依赖已就位，待迁移 |
+| `net-venture-radar.yml` | 脚本/依赖已就位，待迁移 |
 
 ## 安全规范
 
