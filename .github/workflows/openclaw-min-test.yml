@@ -57,4 +57,4 @@ JSON
           openclaw infer model run --local --json \
             --model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free \
             --prompt "$(cat tests/openclaw-min-input.md)" 2>&1 | tee /tmp/openclaw_out.txt
-          echo "=== exit=$? ==="
+          echo "=== exit=$? ==="# force re-register
