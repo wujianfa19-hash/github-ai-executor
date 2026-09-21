@@ -1,0 +1,43 @@
+name: OpenClaw Brain Min Read
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openclaw-brain-min-read
+  cancel-in-progress: false
+
+jobs:
+  brain-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout public executor (code only)
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+
+      - name: Install
+        run: npm install -g openclaw@latest --allow-scripts=openclaw
+
+      # 最小权限：只读 token + sparse 检出，只拉取永久大脑指定单一入口文件，不克隆整个私人大脑
+      - name: Checkout single designated brain entry (least-privilege read)
+        uses: actions/checkout@v4
+        with:
+          repository: wujianfa19-hash/yongjiu-danao
+          token: ${{ secrets.PRIVATE_BRAIN_READ_TOKEN }}
+          path: .brain-entry
+          sparse-checkout: 00_大脑入口/永久大脑启动规则.md
+          fetch-depth: 1
+
+      - name: OpenClaw minimal brain read (no private body in public logs)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BRAIN_ENTRY_PATH: ${{ github.workspace }}/.brain-entry/00_大脑入口/永久大脑启动规则.md
+        run: node tests/brain-min-read.mjs
