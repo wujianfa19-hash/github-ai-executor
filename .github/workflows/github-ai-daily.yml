@@ -12,6 +12,11 @@ on:
 permissions:
   contents: read
 
+# 同一任务只允许一个真实运行，避免并发重复发信 / 写回冲突
+concurrency:
+  group: github-ai-daily
+  cancel-in-progress: false
+
 jobs:
   daily-dryrun:
     runs-on: ubuntu-latest
@@ -43,3 +48,90 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
         run: node --import "./02_程序组件/共享/free-model-router-adapter.mjs" "02_程序组件/GitHubAI云端日报/daily.mjs" --dry-run
+
+  daily-real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # 仅手动 dispatch 且明确取消 dry_run 时才运行；不挂 schedule（正式定时待三任务验收通过后再统一切换）
+    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+
+    steps:
+      - name: Checkout public executor (code only)
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run unit tests (gate)
+        run: npm test
+
+      # 私仓只作为数据载体：用最小权限 PAT 检出到工作区内的临时目录，公开仓本身不写入任何私人数据
+      - name: Checkout private data repo (least-privilege token)
+        uses: actions/checkout@v4
+        with:
+          repository: wujianfa19-hash/github-ai-daily-intelligence
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: .private-data
+          fetch-depth: 0
+
+      - name: Generate + send report (real), read/write data only in private checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          GMAIL_SENDER_EMAIL: ${{ secrets.GMAIL_SENDER_EMAIL }}
+          REPORT_RECIPIENT_EMAIL: ${{ secrets.REPORT_RECIPIENT_EMAIL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SENSENOVA_API_KEY: ${{ secrets.SENSENOVA_API_KEY }}
+          AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          REPORT_HISTORY_PATH: ${{ github.workspace }}/.private-data/github_ai_report_history.json
+          REPORT_OUTPUT_DIR: ${{ github.workspace }}/.private-data/04_运行数据/reports
+        run: node --import "./02_程序组件/共享/free-model-router-adapter.mjs" "02_程序组件/GitHubAI云端日报/daily.mjs"
+
+      - name: Write back report history to private repo (controlled, no force)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .private-data
+          echo "::group::changed files (paths only)"
+          git status --porcelain
+          echo "::endgroup::"
+          allowed_root="github_ai_report_history.json"
+          allowed_dir="04_运行数据/reports/"
+          bad=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            f="${line:3}"
+            case "$f" in
+              "$allowed_root"|"$allowed_dir"*) ;;
+              *) echo "::error::Disallowed private-repo change: $f"; bad=1 ;;
+            esac
+          done < <(git status --porcelain=v1 --untracked-files=all)
+          if [ "$bad" -ne 0 ]; then
+            echo "::error::Unexpected files changed; aborting before commit (nothing pushed)."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add github_ai_report_history.json 04_运行数据/reports/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: update GitHub AI daily report history (via github-ai-executor)"
+          git fetch origin main
+          if ! git rebase origin/main; then
+            echo "::error::Rebase conflict with remote; aborting rebase, no force push."
+            git rebase --abort
+            exit 1
+          fi
+          git push origin HEAD:main
+          echo "WRITEBACK_OK"
