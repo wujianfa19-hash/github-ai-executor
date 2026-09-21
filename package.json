@@ -7,7 +7,7 @@
     "daily": "node --import \"./02_程序组件/共享/free-model-router-adapter.mjs\" \"02_程序组件/GitHubAI云端日报/daily.mjs\"",
     "check": "node --import \"./02_程序组件/共享/free-model-router-adapter.mjs\" \"02_程序组件/GitHubAI云端日报/daily.mjs\" --dry-run",
     "test": "node --test \"02_程序组件/GitHubAI云端日报/daily.test.mjs\"",
-    "test:self-upgrade": "node --test \"02_程序组件/自我升级引擎/engine.test.mjs\""
+    "test:self-upgrade": "node --test \"02_程序组件/自我升级引擎/engine.test.mjs\" \"02_程序组件/自我升级引擎/runner.test.mjs\""
   },
   "engines": {
     "node": ">=20"
