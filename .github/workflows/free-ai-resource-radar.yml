@@ -104,6 +104,7 @@ jobs:
         run: |
           set -euo pipefail
           cd .private-data
+          git config core.quotePath false
           base="02_程序组件/免费AI资源雷达"
           echo "::group::changed files (paths only)"
           git status --porcelain

@@ -1680,6 +1680,74 @@ async function refreshGmailAccessToken() {
   return (await response.json()).access_token;
 }
 
+function extractEmailAddresses(value) {
+  return [...String(value || "").matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)]
+    .map((match) => match[0].toLowerCase());
+}
+
+function extractPlainTextFromRawEmail(raw) {
+  const source = Buffer.from(raw, "base64url").toString("utf8");
+  const boundaryMatch = source.match(/Content-Type:\s*multipart\/alternative;\s*boundary="?([^"\r\n;]+)"?/i);
+  if (!boundaryMatch) throw new Error("Sent Gmail message has no multipart boundary");
+  for (const part of source.split(`--${boundaryMatch[1]}`)) {
+    if (!/Content-Type:\s*text\/plain\b/i.test(part)) continue;
+    const separator = part.search(/\r?\n\r?\n/);
+    if (separator < 0) continue;
+    return part.slice(separator).replace(/^\r?\n\r?\n/, "").replace(/\r\n/g, "\n").trim();
+  }
+  throw new Error("Sent Gmail message has no text/plain report body");
+}
+
+function reportRepositoriesFromMarkdown(markdown) {
+  const names = [];
+  const seen = new Set();
+  const add = (fullName) => {
+    const normalized = String(fullName || "").replace(/[).,;:]+$/, "");
+    const key = normalized.toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    names.push(normalized);
+  };
+  for (const match of String(markdown).matchAll(/^###\s+\d+\.\s+([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)(?:\s|（|\(|$)/gm)) add(match[1]);
+  if (names.length === 0) {
+    for (const match of String(markdown).matchAll(/https:\/\/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/g)) add(match[1]);
+  }
+  return names.map((fullName) => ({ fullName }));
+}
+
+async function findSentDailyReport(reportDate) {
+  const to = requiredEnv("REPORT_RECIPIENT_EMAIL").toLowerCase();
+  const from = (process.env.GMAIL_SENDER_EMAIL || to).toLowerCase();
+  const subject = `GitHub AI 每日情报｜${reportDate}`;
+  const accessToken = await refreshGmailAccessToken();
+  const query = encodeURIComponent(`in:sent to:${to} subject:"${subject}"`);
+  const listResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=10`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  if (!listResponse.ok) throw new Error(`Gmail sent-message check failed: ${listResponse.status} ${await listResponse.text()}`);
+  const listing = await listResponse.json();
+  for (const message of listing.messages || []) {
+    const metadataResponse = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=metadata&metadataHeaders=Subject&metadataHeaders=To&metadataHeaders=From`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!metadataResponse.ok) throw new Error(`Gmail metadata read failed: ${metadataResponse.status} ${await metadataResponse.text()}`);
+    const metadata = await metadataResponse.json();
+    const headers = Object.fromEntries((metadata.payload?.headers || []).map((header) => [header.name.toLowerCase(), header.value]));
+    if (headers.subject !== subject) continue;
+    if (!extractEmailAddresses(headers.to).includes(to)) continue;
+    if (!extractEmailAddresses(headers.from).includes(from)) continue;
+    const rawResponse = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(message.id)}?format=raw`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!rawResponse.ok) throw new Error(`Gmail raw message read failed: ${rawResponse.status} ${await rawResponse.text()}`);
+    const rawMessage = await rawResponse.json();
+    return { id: message.id, markdown: extractPlainTextFromRawEmail(rawMessage.raw) };
+  }
+  return null;
+}
+
 async function sendGmail(markdown, reportDate) {
   const to = requiredEnv("REPORT_RECIPIENT_EMAIL");
   const from = process.env.GMAIL_SENDER_EMAIL || to;
@@ -1734,6 +1802,7 @@ const deps = {
   enrichCandidate,
   buildRuleReport,
   generateDeepSeekReport,
+  findSentDailyReport,
   sendGmail,
   saveReport,
   formatDate,
@@ -1743,6 +1812,27 @@ const deps = {
 async function runMain() {
   const reportDate = deps.formatDate();
   const history = await deps.loadHistory();
+  const gmailConfigured = [
+    "GMAIL_CLIENT_ID",
+    "GMAIL_CLIENT_SECRET",
+    "GMAIL_REFRESH_TOKEN",
+    "REPORT_RECIPIENT_EMAIL"
+  ].every((name) => process.env[name]);
+  if (!isDryRun() && gmailConfigured) {
+    const sentReport = await deps.findSentDailyReport(reportDate);
+    if (sentReport) {
+      if (!sentReport.markdown.includes(`# GitHub AI 每日情报｜${reportDate}`)) {
+        throw new Error(`Existing sent Gmail message ${sentReport.id} did not contain the expected report heading`);
+      }
+      const sentRepositories = reportRepositoriesFromMarkdown(sentReport.markdown);
+      if (sentRepositories.length === 0) {
+        throw new Error(`Existing sent Gmail message ${sentReport.id} did not contain recognizable GitHub repositories`);
+      }
+      const reportPath = await deps.saveReport(sentReport.markdown, reportDate, sentRepositories, history);
+      console.log(`SENT_ALREADY_EXISTS messageId=${sentReport.id} report=${reportPath} projects=${sentRepositories.length}`);
+      return;
+    }
+  }
   const historySet = recentHistorySet(history, reportDate);
   const availableSources = [];
   const unavailableSources = [];
@@ -1875,7 +1965,11 @@ export {
   buildRuleReport,
   markdownToHtml,
   toEmailRaw,
+  extractEmailAddresses,
+  extractPlainTextFromRawEmail,
+  reportRepositoriesFromMarkdown,
   refreshGmailAccessToken,
+  findSentDailyReport,
   sendGmail,
   saveReport,
   runMain,

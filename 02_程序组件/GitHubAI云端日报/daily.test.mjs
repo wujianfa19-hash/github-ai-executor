@@ -20,6 +20,8 @@ import {
   buildRuleReport,
   markdownToHtml,
   toEmailRaw,
+  extractPlainTextFromRawEmail,
+  reportRepositoriesFromMarkdown,
   saveReport,
   recentHistorySet,
   runMain,
@@ -718,6 +720,19 @@ test("toEmailRaw: 邮件同时保留纯文本和 HTML 彩色版", () => {
   assert.ok(decoded.includes("<strong>重点：</strong>"));
 });
 
+test("extractPlainTextFromRawEmail: 可从已发送邮件恢复原始 Markdown", () => {
+  const markdown = "# GitHub AI 每日情报｜2099-01-01\n\n### 1. owner/repo（2099.1.1）";
+  const raw = toEmailRaw({ from: "a@example.com", to: "b@example.com", subject: "测试", markdown });
+  assert.equal(extractPlainTextFromRawEmail(raw), markdown);
+});
+
+test("reportRepositoriesFromMarkdown: 从日报标题恢复项目名单", () => {
+  const repositories = reportRepositoriesFromMarkdown(
+    "# GitHub AI 每日情报｜2099-01-01\n\n### 1. owner/repo（2099.1.1）\nhttps://github.com/owner/repo\n\n### 2. next/project"
+  );
+  assert.deepEqual(repositories.map((repo) => repo.fullName), ["owner/repo", "next/project"]);
+});
+
 // ---------- dry-run 隔离 ----------
 test("saveReport: dry-run 写临时目录，不写正式文件", async () => {
   const originalDryRun = process.env.DRY_RUN;
@@ -732,6 +747,43 @@ test("saveReport: dry-run 写临时目录，不写正式文件", async () => {
   } finally {
     if (originalDryRun === undefined) delete process.env.DRY_RUN;
     else process.env.DRY_RUN = originalDryRun;
+  }
+});
+
+// ---------- 重试幂等：已发送邮件只恢复写回 ----------
+test("runMain: 同日邮件已存在时恢复写回且不重复发送", async () => {
+  const originalDeps = { ...deps };
+  const originalEnv = Object.fromEntries(
+    ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "REPORT_RECIPIENT_EMAIL"]
+      .map((name) => [name, process.env[name]])
+  );
+  for (const name of Object.keys(originalEnv)) process.env[name] = "test-value";
+  const markdown = "# GitHub AI 每日情报｜2099-01-06\n\n### 1. owner/repo（2099.1.6）\nhttps://github.com/owner/repo";
+  let saved = null;
+  let collectCalled = false;
+  let sendCalled = false;
+  deps.formatDate = () => "2099-01-06";
+  deps.loadHistory = async () => ({ reports: [] });
+  deps.findSentDailyReport = async () => ({ id: "existing-message", markdown });
+  deps.collectTrending = async () => { collectCalled = true; return []; };
+  deps.sendGmail = async () => { sendCalled = true; return { id: "duplicate" }; };
+  deps.saveReport = async (savedMarkdown, reportDate, repositories) => {
+    saved = { savedMarkdown, reportDate, repositories };
+    return "/tmp/recovered.md";
+  };
+  try {
+    await runMain();
+    assert.equal(collectCalled, false, "恢复写回不应重新采集");
+    assert.equal(sendCalled, false, "恢复写回不应再次发送邮件");
+    assert.equal(saved.savedMarkdown, markdown);
+    assert.equal(saved.reportDate, "2099-01-06");
+    assert.deepEqual(saved.repositories.map((repo) => repo.fullName), ["owner/repo"]);
+  } finally {
+    Object.assign(deps, originalDeps);
+    for (const [name, value] of Object.entries(originalEnv)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   }
 });
 
