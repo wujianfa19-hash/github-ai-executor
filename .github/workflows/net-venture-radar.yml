@@ -1,6 +1,8 @@
 name: Net Venture Radar
 
 on:
+  schedule:
+    - cron: "30 0 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -54,8 +56,8 @@ jobs:
   radar-real:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # 仅手动 dispatch 且明确取消 dry_run 时才运行；不挂 schedule
-    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+    # schedule 自动触发或手动 dispatch 且明确取消 dry_run 时才运行真实作业
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run) }}
 
     steps:
       - name: Checkout public executor (code only)

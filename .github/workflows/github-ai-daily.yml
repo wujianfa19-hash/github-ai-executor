@@ -1,6 +1,8 @@
 name: GitHub AI Daily Intelligence
 
 on:
+  schedule:
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -52,8 +54,8 @@ jobs:
   daily-real:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # 仅手动 dispatch 且明确取消 dry_run 时才运行；不挂 schedule（正式定时待三任务验收通过后再统一切换）
-    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+    # schedule 自动触发或手动 dispatch 且明确取消 dry_run 时才运行真实作业
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run) }}
 
     steps:
       - name: Checkout public executor (code only)
