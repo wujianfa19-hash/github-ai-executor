@@ -170,3 +170,47 @@ test("编排：没有合格候选，且长期验收保持未完成", () => {
   assert.equal(report.writebackEnabled, false);
   assert.equal(report.note, "长期自动迭代系统尚未验收完成");
 });
+
+test("编排：六环门禁、真实写入和回滚演练全过才完成 V1 技术验收", () => {
+  const events = Array.from({ length: 5 }, (_, index) => event({
+    occurredAt: `2026-09-${13 + index}T00:00:00Z`,
+    dedupeKey: `p5-index-stale#${index}`,
+    evidence: `run:${100 + index}`,
+  }));
+  const experienceId = "P5|information_quality|p5-index-stale|verified";
+  const report = runLoop({
+    events,
+    baselines: [{
+      experienceId,
+      tag: "run_log",
+      targetPath: "02_当前工作台/P5_自我升级运行记录.md",
+      baselineSha: "sha-1",
+      expectedImprovement: "补运行记录",
+      validation: "fixed-tests",
+      rollback: "恢复 sha-0",
+    }],
+    comparison: {
+      stable: candidateInput({ targetImproved: false }),
+      candidate: candidateInput(),
+    },
+    shadow: { stableOutput: "same", candidateOutput: "same", samples: 5, safetyFailures: 0 },
+    adoption: {
+      candidate: {
+        experienceId,
+        targetPath: "02_当前工作台/P5_自我升级运行记录.md",
+        autoApplyAllowed: true,
+        rollback: "恢复 sha-0",
+      },
+      baselineSha: "sha-1",
+      currentSha: "sha-1",
+      conflict: false,
+      forceEnable: true,
+    },
+    writeResult: { status: "applied", rollbackDrillPassed: true },
+  });
+  assert.equal(report.observation.observedDays, 5);
+  assert.equal(report.longRunAccepted, true);
+  assert.equal(report.userOutcomeImproved, false);
+  assert.ok(Object.values(report.rings).every((status) => status === "验收完成"));
+  assert.match(report.note, /V1 受控技术闭环已验收/);
+});

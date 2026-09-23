@@ -5,9 +5,11 @@ import { generateCandidates } from "./candidates.mjs";
 import { comparePair } from "./compare.mjs";
 import { shadowRun } from "./shadow.mjs";
 import { decideAdoption, decideRollback, isWritebackEnabled } from "./apply.mjs";
+import { assessObservation } from "./history-gate.mjs";
 
-export function runLoop({ events, baselines, comparison, shadow, adoption, rollback }) {
+export function runLoop({ events, baselines, comparison, shadow, adoption, rollback, writeResult }) {
   const collected = ingestBatch({ events: [], rejected: [] }, events || []);
+  const observation = assessObservation(collected.ledger.events);
   const experiences = distill(collected.ledger);
   const generated = generateCandidates(experiences, baselines || []);
   const compared = comparison ? comparePair(comparison.stable, comparison.candidate) : null;
@@ -16,15 +18,26 @@ export function runLoop({ events, baselines, comparison, shadow, adoption, rollb
     ? decideAdoption({ ...adoption, comparison: compared, shadow: shadowed })
     : { adopt: false, mode: "shadow", reasons: ["no_adoption_requested"] };
   const recovery = rollback ? decideRollback(rollback) : { rollback: false };
+  // V1 技术验收必须同时有真实跨日观察、完整门禁和已验证的写入/回滚。
+  // 这不等于真实用户效果已改善，后者仍由后续运行持续观察。
+  const longRunAccepted = Boolean(
+    observation.passed
+    && compared?.accept
+    && shadowed.status === "threshold_met"
+    && decision.adopt
+    && writeResult?.status === "applied"
+    && writeResult?.rollbackDrillPassed === true
+  );
   return {
     rings: {
-      collect: collected.ledger.events.length ? "代码完成待验" : "未开始",
-      distill: experiences.length ? "代码完成待验" : "未开始",
-      candidates: generated.emptyReason || "代码完成待验",
-      compare: compared ? "代码完成待验" : "未开始",
-      shadow: shadowed.status === "threshold_met" ? "待持续观察" : shadowed.status,
-      adopt: decision.adopt ? "代码完成待验" : "未启用",
+      collect: longRunAccepted ? "验收完成" : collected.ledger.events.length ? "代码完成待验" : "未开始",
+      distill: longRunAccepted ? "验收完成" : experiences.length ? "代码完成待验" : "未开始",
+      candidates: longRunAccepted ? "验收完成" : generated.emptyReason || "代码完成待验",
+      compare: longRunAccepted ? "验收完成" : compared ? "代码完成待验" : "未开始",
+      shadow: longRunAccepted ? "验收完成" : shadowed.status === "threshold_met" ? "门槛已满足" : shadowed.status,
+      adopt: longRunAccepted ? "验收完成" : decision.adopt ? "待确认写入" : "未启用",
     },
+    observation,
     collected,
     experiences,
     generated,
@@ -33,7 +46,10 @@ export function runLoop({ events, baselines, comparison, shadow, adoption, rollb
     decision,
     recovery,
     writebackEnabled: isWritebackEnabled(),
-    longRunAccepted: false,
-    note: "长期自动迭代系统尚未验收完成",
+    longRunAccepted,
+    userOutcomeImproved: compared?.userOutcomeImproved === true,
+    note: longRunAccepted
+      ? "V1 受控技术闭环已验收；真实用户效果继续观察"
+      : "长期自动迭代系统尚未验收完成",
   };
 }

@@ -5,11 +5,28 @@ on:
   push:
     paths:
       - .github/workflows/api-provider-smoke-test.yml
+      - package.json
+      - "02_程序组件/自我升级引擎/**"
 
 permissions:
   contents: read
 
 jobs:
+  p5-self-upgrade-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Run P5 fixed and acceptance tests
+        run: npm run test:self-upgrade
+
   router-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 6
