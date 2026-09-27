@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "cb333b5cdfb657449af1ba1d6bac903a278e0dc9",
-  "latestCommitDate": "2026-09-25T14:36:59Z",
-  "messageSummary": "chore(sync): record P13 renumbering pending local pull",
-  "checkedAtUtc": "2026-09-25T17:20:13.677Z"
+  "latestSha": "01eb7b678a08e4d058cc0606c3f5e5f5c17dd109",
+  "latestCommitDate": "2026-09-27T18:29:28Z",
+  "messageSummary": "永久规则新增：开发/新建项目先搜 GitHub 再二创（用户确认 2026-09-28）；新项目创建规则加第 0 步引用",
+  "checkedAtUtc": "2026-09-27T19:08:32.808Z"
 }
