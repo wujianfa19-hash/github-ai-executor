@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "e7f62b67af5829179adf657965e7ccacef424118",
-  "latestCommitDate": "2026-09-30T07:41:03Z",
-  "messageSummary": "rules: 大脑入口新增《历史档案建设操作规则》与《本地GitHub定向同步操作SOP》，永久规则挂入口指针——历史档案体系操作层固化，任何Agent可照做",
-  "checkedAtUtc": "2026-09-30T12:11:15.111Z"
+  "latestSha": "4c2bd0a393e4b4d268c5104395c285cd08df7acc",
+  "latestCommitDate": "2026-09-30T16:21:14Z",
+  "messageSummary": "docs(brain): record guardian first overnight ops inspection (CI root cause = runner not executed, steps=[], no code fix)",
+  "checkedAtUtc": "2026-09-30T18:01:12.744Z"
 }
