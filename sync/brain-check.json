@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "516f9932b435aeee90f8f6cc2352c685ef35da4b",
-  "latestCommitDate": "2026-10-03T14:54:53Z",
-  "messageSummary": "通用接入.md加人格包硬依赖警告（老板裁决3）+当前待办登记7篇原文缺口（裁决4）",
-  "checkedAtUtc": "2026-10-03T17:35:21.949Z"
+  "latestSha": "e892a24effae604d8302a39eda42335ca6b342e5",
+  "latestCommitDate": "2026-10-04T12:58:59Z",
+  "messageSummary": "P5 账本补同步：新增条目 037-040（040 为单文件 HTML 内嵌大图片的占位符替换法，2026-10-04）",
+  "checkedAtUtc": "2026-10-04T14:25:18.262Z"
 }
