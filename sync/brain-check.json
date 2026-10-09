@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "3cdddd07d979c7f9763fb24a4bda8f1c7f91a545",
-  "latestCommitDate": "2026-10-07T17:32:59Z",
-  "messageSummary": "sync(永久大脑): 防复发固化(老板2026-10-08拍板)——SOP新增4.5提交前核对硬步骤(返回码非零即停/staged清单无预期外D/改名新增目标文件存在性断言)并登记两起永久回归案例(add失败仍commit、git mv后",
-  "checkedAtUtc": "2026-10-07T17:47:08.950Z"
+  "latestSha": "f7e49dc34f9553fa8e99e0ac005379308539f741",
+  "latestCommitDate": "2026-10-09T12:33:32Z",
+  "messageSummary": "docs(brain): clarify V2 modules remain planning-only",
+  "checkedAtUtc": "2026-10-09T14:32:12.754Z"
 }
