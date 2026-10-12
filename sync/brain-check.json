@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "1032478d1fc58ca25692985899e1d3977c35a1e3",
-  "latestCommitDate": "2026-10-11T18:27:02Z",
-  "messageSummary": "任务快照与续接规则 V1.1 落地（台账＋git双保险，老板拍板）：新规则正本＋进行中任务台账建档＋永久规则挂硬规则节＋新窗口启动规则读取链第14位与闭环挂载＋最近重要决定与同步状态登记；快照默认提交即推（同日老板纠正对齐双端监督）",
-  "checkedAtUtc": "2026-10-11T18:59:16.169Z"
+  "latestSha": "dbaee928bbb6b11cbb86a7e9e033338e8fedaac7",
+  "latestCommitDate": "2026-10-12T12:21:59Z",
+  "messageSummary": "docs(brain): P15 Docker数据盘迁移收尾待办登记（删G盘.bak备份，观察期至10-19，需老板确认）+ 以远端为准拉回当前任务/待办简介",
+  "checkedAtUtc": "2026-10-12T17:49:12.876Z"
 }
