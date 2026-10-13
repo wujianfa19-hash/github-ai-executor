@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "5a9fc503f43b09fe29b952320922ba81593c72ff",
-  "latestCommitDate": "2026-10-12T21:48:43Z",
-  "messageSummary": "chore(brain): 投递 2026-10-12 巡检待办（小事 1 / 大事 5）",
-  "checkedAtUtc": "2026-10-12T23:49:27.695Z"
+  "latestSha": "3a82da49ba4b457c524bd9d6548fa497fdb55681",
+  "latestCommitDate": "2026-10-13T15:55:08Z",
+  "messageSummary": "[记忆] P5账本新增条目057：判分支是否已合入的正确判据（ahead_by会骗人、merged字段要看merged_at、blob sha复核）",
+  "checkedAtUtc": "2026-10-13T18:29:18.412Z"
 }
