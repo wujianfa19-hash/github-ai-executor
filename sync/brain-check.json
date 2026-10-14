@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "8827299f316dbda5114e09feebb39bf5a3978adf",
-  "latestCommitDate": "2026-10-14T10:38:20Z",
-  "messageSummary": "docs(brain): 权限边界清单更新——素材包模式落地说明（2026-10-14：brain 读取宿主机预汇总素材包获查云端/看项目能力，系统命令权限保持为零；附 exec allow 试错结论）",
-  "checkedAtUtc": "2026-10-14T12:50:09.322Z"
+  "latestSha": "de82c31ad6765c767064505cfe320686794b8e50",
+  "latestCommitDate": "2026-10-14T18:07:09Z",
+  "messageSummary": "chore(brain): 投递 2026-10-14 巡检待办（小事 1 / 大事 4）",
+  "checkedAtUtc": "2026-10-14T20:57:59.137Z"
 }
