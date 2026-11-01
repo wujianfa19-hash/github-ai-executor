@@ -1,7 +1,7 @@
 {
   "brainRepo": "wujianfa19-hash/yongjiu-danao",
-  "latestSha": "e10bc2fb83f72bff54c5ff9ad9d035265a687c6e",
-  "latestCommitDate": "2026-11-01T05:50:10Z",
-  "messageSummary": "福利哨兵每日快照 10 0 * * *",
-  "checkedAtUtc": "2026-11-01T07:51:25.358Z"
+  "latestSha": "bef6ab46811be0b144aba91f3f4826a256d3a55d",
+  "latestCommitDate": "2026-11-01T14:18:22Z",
+  "messageSummary": "docs(handoff): 废止 main 窗口续接点（已迁移 handoff/current）＋同步 HANDOFF（chat换血 V5 Step1）",
+  "checkedAtUtc": "2026-11-01T14:41:48.682Z"
 }
