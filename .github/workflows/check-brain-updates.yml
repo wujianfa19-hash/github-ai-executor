@@ -3,7 +3,9 @@ name: Check Brain Updates
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"
+    # 收件箱事前化 C1 降频（2026-11-06）：每 10 分钟（144 次/天）→ 早晚各一次
+    # UTC 1:17,13:17 = 北京 9:17,21:17
+    - cron: "17 1,13 * * *"
 
 permissions:
   contents: write
