@@ -211,11 +211,30 @@ function extractJsonObject(text) {
   throw new Error("Model did not return valid JSON");
 }
 
+// 收件箱事前化 C1 后免费路由按 TPM 限流（实测 groq gpt-oss-120b 报 413）：
+// 证据预算逐级瘦身重试，其他状态码照旧抛出（不掩盖真故障）。
+const EVIDENCE_BUDGETS = [45_000, 20_000, 9_000, 4_000];
+
+function buildEvidenceText(sources, budget) {
+  const list = Array.isArray(sources) ? sources : [];
+  if (!list.length) return "";
+  const per = Math.max(600, Math.floor(budget / list.length));
+  const parts = list.map((s, i) => {
+    const head = `SOURCE ${i + 1} [${s.kind}] ${s.url}`;
+    const raw = String(s.text || "");
+    const body = raw.slice(0, per);
+    return `${head}\n${body}${raw.length > per ? " …[已截断]" : ""}`;
+  });
+  return parts.join("\n\n").slice(0, budget);
+}
+
 export async function analyzeWithDeepSeek(candidate, evidence, { apiKey, model = "deepseek-chat", skillExcerpt = "" } = {}) {
   if (!apiKey) return null;
-  const evidenceText = evidence.sources.map((s, i) => `SOURCE ${i + 1} [${s.kind}] ${s.url}\n${s.text}`).join("\n\n").slice(0, 45_000);
-  const system = `你是“网创新项目雷达”的事实核验器。严格区分事实与推断。未知必须输出 unknown/unconfirmed，不得猜测中国大陆支持、KYC、提现、佣金、到账案例。不得建议虚假身份、绕地域限制、借用KYC或其他规避风控做法。只输出 JSON，不要 Markdown。${skillExcerpt ? `\n规则摘要：${skillExcerpt.slice(0, 6000)}` : ""}`;
-  const user = `候选项目：\n${JSON.stringify({
+  const skillNote = skillExcerpt ? `
+规则摘要：${skillExcerpt.slice(0, 6000)}` : "";
+  const system = `你是“网创新项目雷达”的事实核验器。严格区分事实与推断。未知必须输出 unknown/unconfirmed，不得猜测中国大陆支持、KYC、提现、佣金、到账案例。不得建议虚假身份、绕地域限制、借用KYC或其他规避风控做法。只输出 JSON，不要 Markdown。${skillNote}`;
+  const userBase = `候选项目：
+${JSON.stringify({
     project_id: candidate.projectId,
     name: candidate.name || candidate.title,
     url: candidate.url,
@@ -225,7 +244,11 @@ export async function analyzeWithDeepSeek(candidate, evidence, { apiKey, model =
     stars: candidate.stars,
     points: candidate.points,
     comments: candidate.comments
-  })}\n\n已抓取证据：\n${evidenceText || "无可用正文证据"}\n\n请返回严格 JSON，字段必须齐全：
+  })}`;
+  let lastError = null;
+  for (const budget of EVIDENCE_BUDGETS) {
+    const evidenceText = buildEvidenceText(evidence.sources, budget);
+    const user = `${userBase}\n\n已抓取证据：\n${evidenceText || "无可用正文证据"}\n\n请返回严格 JSON，字段必须齐全：
 {
   "summary":"1-2句",
   "why_now":"1-2句",
@@ -265,19 +288,25 @@ export async function analyzeWithDeepSeek(candidate, evidence, { apiKey, model =
   "source_urls":["只列证据中实际出现的URL"]
 }
 机会评分按100分制：新鲜度30、变现25、普通人参与15、需求红利15、信息差15。urgency_score/long_term_score 为0-100。不要为了凑分而乐观。`;
-  const response = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: system }, { role: "user", content: user }]
-    })
-  }, 45_000);
-  if (!response.ok) throw new Error(`DeepSeek ${response.status}: ${(await response.text()).slice(0, 1000)}`);
-  const data = await response.json();
-  return extractJsonObject(data.choices?.[0]?.message?.content || "");
+    const response = await fetchWithTimeout("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [{ role: "system", content: system }, { role: "user", content: user }]
+      })
+    }, 45_000);
+    if (response.ok) {
+      const data = await response.json();
+      return extractJsonObject(data.choices?.[0]?.message?.content || "");
+    }
+    lastError = new Error(`DeepSeek ${response.status}: ${(await response.text()).slice(0, 1000)}`);
+    if (response.status !== 413 && response.status !== 429) throw lastError;
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // 限流/超限：瘦身一档再试
+  }
+  throw lastError;
 }
 
 export async function refreshGmailAccessToken({ clientId, clientSecret, refreshToken }) {
