@@ -1,12 +1,13 @@
 name: Net Venture Radar
 
+# 2026-11-08 停用：商机采集已迁至 001-dierdanao 仓内
+# opportunity-inbox-radar.yml（V2 商品侧）。本文件仅保留 dry-run 单测兜底，不再排程、不再发邮件。
+
 on:
-  schedule:
-    - cron: "30 0 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "仅测试：不发邮件、不写状态、不写报告到仓库"
+        description: "仅测试：不写状态、不写报告、不写收件箱"
         type: boolean
         required: false
         default: true
