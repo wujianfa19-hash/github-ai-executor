@@ -1,8 +1,9 @@
 name: GitHub AI Daily Intelligence
 
 on:
-  schedule:
-    - cron: "0 1 * * *"
+  # 2026-11-08 停用（收件箱哨兵替代施工阶段3，老板拍板：已被 001d 哨兵替代）
+  # schedule:
+  #   - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

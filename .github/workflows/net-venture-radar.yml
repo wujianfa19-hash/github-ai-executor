@@ -1,6 +1,7 @@
 name: Net Venture Radar
 
 # 2026-11-08 停用：商机采集已迁至 001-dierdanao 仓内
+# 2026-11-08 停用（收件箱哨兵替代施工阶段3，老板拍板：已被 001d 哨兵替代）
 # opportunity-inbox-radar.yml（V2 商品侧）。本文件仅保留 dry-run 单测兜底，不再排程、不再发邮件。
 
 on:
